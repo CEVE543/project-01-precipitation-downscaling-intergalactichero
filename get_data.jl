@@ -75,7 +75,7 @@ Download ERA5 single-level reanalysis data for a specified variable and year.
 
 ## Example:
 ```julia
-download_single_level_data(2020, "temperature_2020.nc", "2m_temperature")
+download_single_level_data(2018, "temperature_2018.nc", "2m_temperature")
 ```
 """
 function download_single_level_data(
@@ -134,7 +134,7 @@ Download ERA5 pressure-level reanalysis data for a specified variable, year, and
 
 ## Example:
 ```julia
-download_pressure_level_data(2020, "geopotential_500hPa_2020.nc", "geopotential", 500)
+download_pressure_level_data(2018, "geopotential_500hPa_2018.nc", "geopotential", 500)
 ```
 """
 function download_pressure_level_data(
@@ -269,15 +269,15 @@ function run_demo()
     # the path to the raw data folder
     data_dir = joinpath(HOMEDIR, "data", "raw")
 
-    years = 2019:2020 # example time range
+    years = 2017:2018 # example time range
     for year in years
 
-        # Download 2m air temperature for the year 2020
+        # Download 2m air temperature for the year 2018
         download_single_level_data.(
             year, joinpath(data_dir, "2m_temperature_$year.nc"), "2m_temperature"
         )
 
-        # Download 500 hPa geopotential for the year 2020
+        # Download 500 hPa geopotential for the year 2018
         level = 500
         download_pressure_level_data.(
             year,

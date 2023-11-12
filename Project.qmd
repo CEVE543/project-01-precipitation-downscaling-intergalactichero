@@ -34,12 +34,39 @@ using StatsBase
 using Unitful
 ```
 
+We have imported hourly temperature data from the ERA5 reanalysis dataset, which encompasses temperature of air at 2m above the surface of land
+
 ```{julia}
-precip_ds = NCDataset("data/raw/precip_tx.nc")
-precip_time = precip_ds["time"][:]
-precip_lon = precip_ds["lon"][:]
-precip_lat = precip_ds["lat"][:]
-precip = precip_ds["precip"][:, :, :]
+precip_tx = NCDataset("data/raw/precip_tx.nc")
+precip_time = precip_tx["time"][:]
+precip_lon = precip_tx["lon"][:]
+precip_lat = precip_tx["lat"][:]
+precip = precip_tx["precip"][:, :, :]
 ```
 
-We have imported
+```{julia}
+precip = precip .* 1u"mm"
+precip_lat = reverse(precip_lat)
+precip = reverse(precip; dims=2)
+```
+
+```{julia}
+heatmap(
+    precip_lon,
+    precip_lat,
+    precip[:, :, 1]';
+    xlabel="Longitude",
+    ylabel="Latitude",
+    title="Precipitation on $(precip_time[1])"
+    )
+```
+
+```{julia}
+temp_tx = NCDataset("data/raw/2m_temperature_1980.nc")
+temp_time = temp_tx["time"][:]
+temp_lon = temp_tx["longitude"][:]
+temp_lat = temp_tx["latitude"][:]
+temp = temp_tx[:t2m][:, :, :]
+display(temp_tx[:t2m])
+close(temp_tx)
+```

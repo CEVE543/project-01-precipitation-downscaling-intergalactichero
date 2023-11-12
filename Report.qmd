@@ -1,0 +1,17 @@
+---
+title: "Project 1"
+subtitle: "Downscaling"
+jupyter: julia-1.9
+date: 2023-11-13
+author: "Cristobal Spielmann (cs181)"
+---
+
+## Executive Summary
+
+## Exploratory Data Analysis
+
+## Methods
+
+## Model Comparison
+
+## Conclusion

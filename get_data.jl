@@ -75,7 +75,7 @@ Download ERA5 single-level reanalysis data for a specified variable and year.
 
 ## Example:
 ```julia
-download_single_level_data(2018, "temperature_2018.nc", "2m_temperature")
+download_single_level_data(1989, "temperature_1989.nc", "2m_temperature")
 ```
 """
 function download_single_level_data(
@@ -109,7 +109,6 @@ function download_single_level_data(
 end
 
 """
-    download_pressure_level_data(year, filename, variable, level)
 
 Download ERA5 pressure-level reanalysis data for a specified variable, year, and pressure level.
 
@@ -133,41 +132,7 @@ Download ERA5 pressure-level reanalysis data for a specified variable, year, and
 4. The spatial domain is set to cover an area roughly corresponding to the United States with a 1-degree grid resolution.
 
 ## Example:
-```julia
-download_pressure_level_data(2018, "geopotential_500hPa_2018.nc", "geopotential", 500)
-```
 """
-function download_pressure_level_data(
-    year::Int,
-    filename::AbstractString,
-    variable::AbstractString,
-    level::Int;
-    hours=0:23,
-    resolution=1.0,
-    bbox=[50, -130, 24, -65],
-)
-    if isfile(filename)
-        println("File $filename already exists. Skipping download.")
-        return nothing
-    end
-
-    return CDSAPI.retrieve(
-        "reanalysis-era5-pressure-levels",
-        CDSAPI.py2ju("""{
-                     "product_type": "reanalysis",
-                     "format": "netcdf",
-                     "variable": "$variable",
-                     "pressure_level": "$level",
-                     "year": "$year",
-                     "month": $(["$(lpad(i, 2, '0'))" for i in 1:12]),
-                     "day": $(["$(lpad(i, 2, '0'))" for i in 1:31]),
-                     "time": $(["$(lpad(hour, 2, '0')):00" for hour in hours]),
-                     "area": $bbox,
-                     "grid": ["$resolution", "$resolution"],
-                     }"""),
-        filename,
-    )
-end
 
 """
     open_mfdataset(files, variable_name)
@@ -269,21 +234,12 @@ function run_demo()
     # the path to the raw data folder
     data_dir = joinpath(HOMEDIR, "data", "raw")
 
-    years = 2017:2018 # example time range
+    years = 1980:1989 # example time range
     for year in years
 
-        # Download 2m air temperature for the year 2018
+        # Download 2m air temperature for the year 1989
         download_single_level_data.(
             year, joinpath(data_dir, "2m_temperature_$year.nc"), "2m_temperature"
-        )
-
-        # Download 500 hPa geopotential for the year 2018
-        level = 500
-        download_pressure_level_data.(
-            year,
-            joinpath(data_dir, "$(level)hPa_geopotential_$year.nc"),
-            "geopotential",
-            level,
         )
     end
 
@@ -291,12 +247,7 @@ function run_demo()
     fnames = shuffle(glob("2m_temperature", data_dir)) # shuffle -- should work even if out of order
     t2m = open_mfdataset(fnames, "t2m") # we sort based on time, so we don't need to sort here
 
-    # read in all the 500 hPa geopotential data
-    fnames = shuffle(glob("500hPa_geopotential", data_dir))
-    z500 = open_mfdataset(fnames, "z")
-
     display(t2m)
-    display(z500)
 
     return nothing
 end

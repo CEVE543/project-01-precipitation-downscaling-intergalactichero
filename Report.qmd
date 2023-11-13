@@ -7,11 +7,66 @@ author: "Cristobal Spielmann (cs181)"
 ---
 
 ## Executive Summary
+This report attempts to apply a downscaling model on both the precipitation data across the state of Texas and the ERA5 parameter of temperature data of air at 2m above the Earth's surface. This will aim to increase the resolution of the precipitation data available by using the temperature parameter from 1980 to 2020 as a predictor for the precipitation predictand. The two models of this project are a GLM model and a KNN model.
 
 ## Exploratory Data Analysis
+```{julia}
+heatmap(
+precip_lon,
+precip_lat,
+precip[:, :, 15341]';
+xlabel="Longitude",
+ylabel="Latitude",
+title="Precipitation on $(precip_time[15341])"
+)
+```
+
+```{julia}
+heatmap(
+precip_lon,
+precip_lat,
+precip[:, :, 15341]';
+xlabel="Longitude",
+ylabel="Latitude",
+title="Precipitation on $(precip_time[15341])"
+)
+```
+
+```{julia}
+pca_model = fit(PCA, temp_mat_train; maxoutdim=25, pratio=0.999);
+p1 = plot(
+principalvars(pca_model) / var(pca_model);
+xlabel="# of PCs",
+ylabel="Fraction of Variance Explained",
+label=false,
+title="Variance Explained"
+)
+p2 = plot(
+cumsum(principalvars(pca_model)) / var(pca_model);
+xlabel="# of PCs",
+ylabel="Fraction of Variance Explained",
+label=false,
+title="Cumulative Variance Explained Plot"
+)
+plot(p1, p2; layout=(1, 2), size=(800, 400))
+```
+
+Scatter plot
+```{julia}
+scatter(
+    temp_mat_train
+    precip_train;
+    label=false,
+    xlabel="Temperature (deg K)",
+    ylabel="Precipitation",
+    legend=:topleft
+)
+```
 
 ## Methods
+I attempted to fit two models to this data. The first was a GLM as a simpler model and in assuming that neither the temperature nor the precipitation data would be normally distributed. The second model is a KNN analysis model based on the work done in Lab 6.
 
 ## Model Comparison
 
 ## Conclusion
+This process was complicated from how the data was collected; the data and code in the Project quarto file shows how I attempted to coordinate multiple .nc files of temperature with the precipitation data. After performing a [] model and [] model of downscaling of both datasets, [].

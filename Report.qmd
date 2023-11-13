@@ -10,7 +10,8 @@ author: "Cristobal Spielmann (cs181)"
 This report attempts to apply a downscaling model on both the precipitation data across the state of Texas and the ERA5 parameter of temperature data of air at 2m above the Earth's surface. This will aim to increase the resolution of the precipitation data available by using the temperature parameter from 1980 to 2020 as a predictor for the precipitation predictand. The two models of this project are a GLM model and a KNN model.
 
 ## Exploratory Data Analysis
-```{julia}
+
+```julia
 heatmap(
 precip_lon,
 precip_lat,
@@ -21,7 +22,7 @@ title="Precipitation on $(precip_time[15341])"
 )
 ```
 
-```{julia}
+```julia
 heatmap(
 precip_lon,
 precip_lat,
@@ -32,7 +33,7 @@ title="Precipitation on $(precip_time[15341])"
 )
 ```
 
-```{julia}
+```julia
 pca_model = fit(PCA, temp_mat_train; maxoutdim=25, pratio=0.999);
 p1 = plot(
 principalvars(pca_model) / var(pca_model);
@@ -52,7 +53,7 @@ plot(p1, p2; layout=(1, 2), size=(800, 400))
 ```
 
 Scatter plot
-```{julia}
+```julia
 scatter(
     temp_mat_train
     precip_train;
@@ -68,5 +69,46 @@ I attempted to fit two models to this data. The first was a GLM as a simpler mod
 
 ## Model Comparison
 
+GLM Model
+```julia
+pca_model = fit(PCA, temp_mat_train; maxoutdim=25, pratio=0.999);
+p1 = plot(
+principalvars(pca_model) / var(pca_model);
+xlabel="# of PCs",
+ylabel="Fraction of Variance Explained",
+label=false,
+title="Variance Explained"
+)
+p2 = plot(
+cumsum(principalvars(pca_model)) / var(pca_model);
+xlabel="# of PCs",
+ylabel="Fraction of Variance Explained",
+label=false,
+title="Cumulative Variance Explained Plot"
+)
+plot(p1, p2; layout=(1, 2), size=(800, 400))
+```
+
+```julia
+scatter(
+    temp_mat_train
+    precip_train;
+    label=false,
+    xlabel="Temperature (deg K)",
+    ylabel="Precipitation",
+    legend=:topleft
+)
+```
+
+KNN Model
+```julia
+function knn(X::AbstractMatrix, X_i::AbstractVector, K::Int)::Tuple{Int,AbstractVector}
+dist = [euclidean_distance(X_i, X[j, :]) for j in 1:size(X, 1)]
+idx = nsmallest(dist, K)
+w = 1 ./ dist[idx]
+w ./= sum(w)
+```
+
+
 ## Conclusion
-This process was complicated from how the data was collected; the data and code in the Project quarto file shows how I attempted to coordinate multiple .nc files of temperature with the precipitation data. After performing a [] model and [] model of downscaling of both datasets, [].
+This process was complicated from how the data was collected; the data and code in the Project quarto file shows how I attempted to coordinate multiple .nc files of temperature with the precipitation data. After performing a GLM model and KNN model of downscaling of both datasets, I was unable to to produce a plot or model for either.

@@ -9,7 +9,7 @@ number-sections: true
 code-annotations: hover
 
 kind: "Project"
-Module: "3"
+Module: "2"
 categories:
     - "Project 1"
     - "Projects"
@@ -25,6 +25,7 @@ format:
 
 ## Introduction
 
+These are the packages that will be used in this project.
 ```{julia}
 using Dates
 using MultivariateStats
@@ -32,9 +33,13 @@ using Plots
 using NCDatasets
 using StatsBase
 using Unitful
+using NetCDF
+using DataFrames
 ```
 
-We have imported hourly temperature data from the ERA5 reanalysis dataset, which encompasses temperature of air at 2m above the surface of land
+We have imported hourly temperature data from the ERA5 reanalysis dataset, which encompasses temperature of air at 2m above the surface of land, from 1980 to 2020.
+
+The precipitation data from Texas serves as a predictand with 16365 daily data values from January 1, 1979 to October 21, 2023. Through preprocessing, only daily data from 1980 to 2020 will be considered in our testing and training data.
 
 ```{julia}
 precip_tx = NCDataset("data/raw/precip_tx.nc")
@@ -45,28 +50,97 @@ precip = precip_tx["precip"][:, :, :]
 ```
 
 ```{julia}
+precip = replace(precip, missing => NaN)
+precip[isnan.(precip)] .= NaN
+```
+
+```{julia}
 precip = precip .* 1u"mm"
 precip_lat = reverse(precip_lat)
 precip = reverse(precip; dims=2)
 ```
 
+Below generates a heatmap of the first day of our precipitation data in Texas.
 ```{julia}
 heatmap(
-    precip_lon,
-    precip_lat,
-    precip[:, :, 1]';
-    xlabel="Longitude",
-    ylabel="Latitude",
-    title="Precipitation on $(precip_time[1])"
-    )
+precip_lon,
+precip_lat,
+precip[:, :, 366]';
+xlabel="Longitude",
+ylabel="Latitude",
+title="Precipitation on $(precip_time[366])"
+)
+```
+
+Below generates a heatmap of the last day of our precipitation data in Texas.
+```{julia}
+heatmap(
+precip_lon,
+precip_lat,
+precip[:, :, 15341]';
+xlabel="Longitude",
+ylabel="Latitude",
+title="Precipitation on $(precip_time[15341])"
+)
+```
+
+We will divide our daily data in training and testing data, the former from 1980 to 2009, the latter from 2010 to 2020.
+```{julia}
+precip_train = precip[:, :, 366:11323]
+precip_test = precip[:, :, 11324:15341]
+```
+
+The code below aims to collect all of the temperature data into one dictionary repository.
+
+```{julia}
+using NCDatasets
+
+base_path = "data/raw/"
+files = ["2m_temperature_1980.nc", "2m_temperature_1981.nc", "2m_temperature_1982.nc", "2m_temperature_1983.nc", "2m_temperature_1984.nc", "2m_temperature_1985.nc", "2m_temperature_1986.nc", "2m_temperature_1987.nc", "2m_temperature_1988.nc", "2m_temperature_1989.nc", "2m_temperature_1990.nc", "2m_temperature_1991.nc", "2m_temperature_1992.nc", "2m_temperature_1993.nc", "2m_temperature_1994.nc", "2m_temperature_1995.nc", "2m_temperature_1996.nc", "2m_temperature_1997.nc", "2m_temperature_1998.nc", "2m_temperature_1999.nc", "2m_temperature_2000.nc", "2m_temperature_2001.nc", "2m_temperature_2002.nc","2m_temperature_2003.nc","2m_temperature_2004.nc","2m_temperature_2005.nc","2m_temperature_2006.nc","2m_temperature_2007.nc","2m_temperature_2008.nc","2m_temperature_2009.nc","2m_temperature_2010.nc","2m_temperature_2011.nc","2m_temperature_2012.nc","2m_temperature_2013.nc","2m_temperature_2014.nc","2m_temperature_2015.nc","2m_temperature_2016.nc","2m_temperature_2017.nc","2m_temperature_2018.nc","2m_temperature_2019.nc","2m_temperature_2020.nc"]
+
+temp_dict = Dict{String, Any}()
+time_dict = Dict{String, Any}()
+lon_dict = Dict{String, Any}()
+lat_dict = Dict{String, Any}()
+
+for file in files
+    file_path = joinpath(base_path, file)
+    year_str = split(file, "_")[3]
+    temp_ds = NCDataset(file_path)
+    temp_dict[year_str] = temp_ds[:t2m][:, :, :]
+    time_dict[year_str] = temp_ds["time"][:]
+    lon_dict[year_str] = temp_ds["longitude"][:]
+    lat_dict[year_str] = temp_ds["latitude"][:]
+    close(temp_ds)
+end
+```
+
+We will be training and testing the temperature data on the same
+```{julia}
+temp_train_years = Symbol.(1980:2010)
+temp_test_years = Symbol.(2011:2020)
+temp_train = Dict(year => data_dict[year] for year in temp_train_years if haskey(data_dict, year))
+temp_test = Dict(year => data_dict[year] for year in temp_test_years if haskey(data_dict, year))
 ```
 
 ```{julia}
-temp_tx = NCDataset("data/raw/2m_temperature_1980.nc")
-temp_time = temp_tx["time"][:]
-temp_lon = temp_tx["longitude"][:]
-temp_lat = temp_tx["latitude"][:]
-temp = temp_tx[:t2m][:, :, :]
-display(temp_tx[:t2m])
-close(temp_tx)
+n_lon, n_lat, n_t = size(data_dict)
+temp_mat_train = preprocess(temp_train, temp_train)
+temp_mat_test = preprocess(temp_test, temp_train)
+```
+
+```julia
+using CDSAPI
+using NCDatasets
+using StatsBase: shuffle
+base_path = "data/raw"
+files = ["2m_temperature_1980.nc", "2m_temperature_1981.nc", "2m_temperature_1982.nc", "2m_temperature_1983.nc", "2m_temperature_1984.nc", "2m_temperature_1985.nc", "2m_temperature_1986.nc", "2m_temperature_1987.nc", "2m_temperature_1988.nc", "2m_temperature_1989.nc", "2m_temperature_1990.nc", "2m_temperature_1991.nc", "2m_temperature_1992.nc", "2m_temperature_1993.nc", "2m_temperature_1994.nc", "2m_temperature_1995.nc", "2m_temperature_1996.nc", "2m_temperature_1997.nc", "2m_temperature_1998.nc", "2m_temperature_1999.nc", "2m_temperature_2000.nc", "2m_temperature_2001.nc", "2m_temperature_2002.nc","2m_temperature_2003.nc","2m_temperature_2004.nc","2m_temperature_2005.nc","2m_temperature_2006.nc","2m_temperature_2007.nc","2m_temperature_2008.nc","2m_temperature_2009.nc","2m_temperature_2010.nc","2m_temperature_2011.nc","2m_temperature_2012.nc","2m_temperature_2013.nc","2m_temperature_2014.nc","2m_temperature_2015.nc","2m_temperature_2016.nc","2m_temperature_2017.nc","2m_temperature_2018.nc","2m_temperature_2019.nc","2m_temperature_2020.nc"]
+file_paths = [joinpath(base_path, file) for file in files]
+data_dict = Dict{Symbol, Any}()
+for file_path in file_paths
+    dataset = NCDataset(file_path)
+    variable_data = dataset["t2m"][:]
+    push!(data_dict, Symbol(file_path) => variable_data)
+    close(dataset)
+end
 ```

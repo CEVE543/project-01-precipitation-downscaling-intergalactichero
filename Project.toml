@@ -1,6 +1,9 @@
 [deps]
 CDSAPI = "8a7b9de3-9c00-473e-88b4-7eccd7ef2fea"
+DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
 GR = "28b8d3ca-fb5f-59d9-8090-bfdbd6d07a71"
 MultivariateStats = "6f286f6a-111f-5878-ab1e-185364afe411"
 NCDatasets = "85f8d34a-cbdd-5861-8df4-14fed0d494ab"
+NetCDF = "30363a11-5582-574a-97bb-aa9a979735b9"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
